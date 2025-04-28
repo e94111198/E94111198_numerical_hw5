@@ -1,0 +1,83 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 定義微分方程系統
+def f(t, u):
+    u1, u2 = u
+    du1 = 9*u1 + 24*u2 + 5*np.cos(t) - (1/3)*np.sin(t)
+    du2 = -24*u1 - 52*u2 - 9*np.cos(t) + (1/3)*np.sin(t)
+    return np.array([du1, du2])
+
+# 真實解
+def exact_solution(t):
+    u1 = 2*np.exp(-3*t) - np.exp(-39*t) + (1/3)*np.cos(t)
+    u2 = -np.exp(-3*t) + 2*np.exp(-39*t) - (1/3)*np.cos(t)
+    return np.array([u1, u2])
+
+# Runge-Kutta 4th order 方法
+def runge_kutta_4(f, u0, t0, t_end, h):
+    t_values = np.arange(t0, t_end + h, h)
+    u_values = np.zeros((len(t_values), len(u0)))
+
+    u_values[0] = u0
+    for i in range(len(t_values)-1):
+        t = t_values[i]
+        u = u_values[i]
+        k1 = f(t, u)
+        k2 = f(t + h/2, u + h/2 * k1)
+        k3 = f(t + h/2, u + h/2 * k2)
+        k4 = f(t + h, u + h * k3)
+        u_values[i+1] = u + (h/6)*(k1 + 2*k2 + 2*k3 + k4)
+    return t_values, u_values
+
+# 初始條件
+u0 = np.array([4/3, 2/3])
+t0 = 0
+t_end = 1
+
+# 設定兩種步長
+hs = [0.1, 0.05]
+
+for h in hs:
+    print(f"\n=== h = {h} ===")
+    t_values, u_values = runge_kutta_4(f, u0, t0, t_end, h)
+    u_exact = np.array([exact_solution(t) for t in t_values])
+
+    u1_error = np.abs(u_values[:,0] - u_exact[:,0])
+    u2_error = np.abs(u_values[:,1] - u_exact[:,1])
+
+    max_u1_error = np.max(u1_error)
+    max_u2_error = np.max(u2_error)
+
+    print("t\t\tu1 (RK4)\t\tu1 (exact)\t\tu2 (RK4)\t\tu2 (exact)\t\tu1 error\t\tu2 error")
+    for i in range(len(t_values)):
+        t = t_values[i]
+        u1_rk, u2_rk = u_values[i]
+        u1_ex, u2_ex = u_exact[i]
+        print(f"{t:.2f}\t{u1_rk:.6f}\t{u1_ex:.6f}\t{u2_rk:.6f}\t{u2_ex:.6f}\t{u1_error[i]:.2e}\t{u2_error[i]:.2e}")
+
+    print(f"\n最大 u1 誤差 (h={h}): {max_u1_error:.2e}")
+    print(f"最大 u2 誤差 (h={h}): {max_u2_error:.2e}")
+
+    # 畫圖比較
+    plt.figure(figsize=(10,5))
+    plt.subplot(1,2,1)
+    plt.plot(t_values, u_values[:,0], 'bo--', label="RK4 u1")
+    plt.plot(t_values, u_exact[:,0], 'k-', label="Exact u1")
+    plt.xlabel('t')
+    plt.ylabel('u1')
+    plt.title(f'u1(t) with h={h}')
+    plt.legend()
+    plt.grid(True)
+
+    plt.subplot(1,2,2)
+    plt.plot(t_values, u_values[:,1], 'ro--', label="RK4 u2")
+    plt.plot(t_values, u_exact[:,1], 'k-', label="Exact u2")
+    plt.xlabel('t')
+    plt.ylabel('u2')
+    plt.title(f'u2(t) with h={h}')
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
