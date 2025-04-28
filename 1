@@ -1,0 +1,61 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 定義微分方程
+def f(t, y):
+    return 1 + (y / t) + (y / t)**2
+
+# f 對 t 和 y 的偏微分 (Taylor order 2 需要)
+def df_dt(t, y):
+    return (-y / t**2) - 2 * (y**2) / t**3
+
+def df_dy(t, y):
+    return (1 / t) + (2 * y / t**2)
+
+# 真實解
+def exact_solution(t):
+    return t * np.tan(np.log(t))
+
+# 參數設定
+h = 0.1
+t_start = 1
+t_end = 2
+n_steps = int((t_end - t_start) / h)
+
+# 初始化
+t_values = np.linspace(t_start, t_end, n_steps + 1)
+y_euler = np.zeros(n_steps + 1)
+y_taylor2 = np.zeros(n_steps + 1)
+
+# 初始條件
+y_euler[0] = 0
+y_taylor2[0] = 0
+
+# (a) Euler's Method
+for i in range(n_steps):
+    y_euler[i+1] = y_euler[i] + h * f(t_values[i], y_euler[i])
+
+# (b) Taylor's Method of order 2
+for i in range(n_steps):
+    f_val = f(t_values[i], y_taylor2[i])
+    f_prime = df_dt(t_values[i], y_taylor2[i]) + df_dy(t_values[i], y_taylor2[i]) * f_val
+    y_taylor2[i+1] = y_taylor2[i] + h * f_val + (h**2 / 2) * f_prime
+
+# 真實解
+y_exact = exact_solution(t_values)
+
+# 輸出結果
+print("t\tEuler y\t\tTaylor2 y\tExact y\t\tEuler Error\tTaylor2 Error")
+for t, ye, yt2, yt in zip(t_values, y_euler, y_taylor2, y_exact):
+    print(f"{t:.1f}\t{ye:.6f}\t{yt2:.6f}\t{yt:.6f}\t{abs(ye - yt):.6f}\t{abs(yt2 - yt):.6f}")
+
+# 畫圖
+plt.plot(t_values, y_exact, 'k-', label="Exact Solution")
+plt.plot(t_values, y_euler, 'bo--', label="Euler Method")
+plt.plot(t_values, y_taylor2, 'gs--', label="Taylor Method Order 2")
+plt.xlabel('t')
+plt.ylabel('y')
+plt.title("Comparison of Methods")
+plt.legend()
+plt.grid(True)
+plt.show()
